@@ -11,7 +11,6 @@ import UIKit
 class MenuTableViewController: UITableViewController {
 
     let category: String
-    let menuController = MenuController()
     var menuItems = [MenuItem]()
     
     override func viewDidLoad() {
@@ -21,7 +20,7 @@ class MenuTableViewController: UITableViewController {
         
         Task.init {
             do {
-                let menuItems = try await menuController.fetchMenuItems(forCategory: category)
+                let menuItems = try await MenuController.shared.fetchMenuItems(forCategory: category)
                 updateUI(with: menuItems)
             } catch {
                 displayError(error, title: "Failed to Fetch Menu Items for \(self.category)")
@@ -47,8 +46,15 @@ class MenuTableViewController: UITableViewController {
         
         var content = cell.defaultContentConfiguration()
         content.text = menuItem.name
-        content.secondaryText = "$\(menuItem.price)"
+        content.secondaryText = menuItem.price.formatted(.currency(code: "usd"))
         cell.contentConfiguration = content
+    }
+    
+    @IBSegueAction func showMenuItem(_ coder: NSCoder, sender: Any?) -> MenuItemDetailViewController? {
+        guard let cell = sender as? UITableViewCell, let indexPath = tableView.indexPath(for: cell) else {return nil}
+        
+        let menuItem = menuItems[indexPath.row]
+        return MenuItemDetailViewController(coder: coder, menuItem: menuItem)
     }
     
     required init?(coder: NSCoder, category: String) {
